@@ -1,0 +1,152 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+// For Turso production: use @prisma/adapter-libsql
+// The schema stays identical — Turso is SQLite-compatible
+
+model User {
+  id             String          @id @default(cuid())
+  name           String
+  email          String          @unique
+  password       String
+  role           String          @default("CASHIER")
+  storeId        String?
+  locale         String          @default("ar")
+  store          Store?          @relation(fields: [storeId], references: [id])
+  sales          Sale[]
+  stockMovements StockMovement[]
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+}
+
+model Store {
+  id         String     @id @default(cuid())
+  name       String
+  address    String?
+  phone      String?
+  logo       String?
+  currency   String     @default("MRU")
+  taxRate    Float      @default(0)
+  users      User[]
+  categories Category[]
+  products   Product[]
+  sales      Sale[]
+  invoices   Invoice[]
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
+}
+
+model Category {
+  id       String    @id @default(cuid())
+  name_ar  String
+  name_fr  String
+  storeId  String
+  store    Store     @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  products Product[]
+}
+
+model Product {
+  id             String          @id @default(cuid())
+  name_ar        String
+  name_fr        String
+  sku            String?
+  barcode        String?         @unique
+  purchasePrice  Float           @default(0)
+  salePrice      Float
+  quantity       Int             @default(0)
+  minQuantity    Int             @default(5)
+  image          String?
+  categoryId     String?
+  storeId        String
+  category       Category?       @relation(fields: [categoryId], references: [id])
+  store          Store           @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  saleItems      SaleItem[]
+  stockMovements StockMovement[]
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+}
+
+model Sale {
+  id            String     @id @default(cuid())
+  totalAmount   Float
+  discount      Float      @default(0)
+  tax           Float      @default(0)
+  paymentMethod String     @default("CASH")
+  status        String     @default("COMPLETED")
+  userId        String
+  storeId       String
+  user          User       @relation(fields: [userId], references: [id])
+  store         Store      @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  items         SaleItem[]
+  invoice       Invoice?
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+}
+
+model SaleItem {
+  id         String  @id @default(cuid())
+  quantity   Int
+  unitPrice  Float
+  totalPrice Float
+  productId  String
+  saleId     String
+  product    Product @relation(fields: [productId], references: [id])
+  sale       Sale    @relation(fields: [saleId], references: [id], onDelete: Cascade)
+}
+
+model Invoice {
+  id            String        @id @default(cuid())
+  invoiceNumber String        @unique
+  status        String        @default("DRAFT")
+  customerName  String?
+  customerPhone String?
+  subtotal      Float         @default(0)
+  discount      Float         @default(0)
+  tax           Float         @default(0)
+  totalAmount   Float
+  notes         String?
+  saleId        String?       @unique
+  storeId       String
+  sale          Sale?         @relation(fields: [saleId], references: [id])
+  store         Store         @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  items         InvoiceItem[]
+  statusHistory InvoiceStatusHistory[]
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+}
+
+model InvoiceItem {
+  id          String   @id @default(cuid())
+  description String
+  quantity    Float    @default(1)
+  unitPrice   Float
+  totalPrice  Float
+  productId   String?
+  invoiceId   String
+  invoice     Invoice  @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+}
+
+model InvoiceStatusHistory {
+  id        String   @id @default(cuid())
+  status    String
+  invoiceId String
+  invoice   Invoice  @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+}
+
+model StockMovement {
+  id        String   @id @default(cuid())
+  type      String
+  quantity  Int
+  reason    String?
+  productId String
+  userId    String
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id])
+  createdAt DateTime @default(now())
+}
