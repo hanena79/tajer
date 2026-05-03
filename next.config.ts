@@ -10,7 +10,7 @@ const nextConfig: NextConfig = {
     unoptimized: true,
   },
   experimental: {
-    serverComponentsExternalPackages: ['bcryptjs'],
+    serverComponentsExternalPackages: ['bcryptjs', 'jose'],
   },
 }
 export default withNextIntl(nextConfig)
