@@ -3,6 +3,9 @@ import { prisma } from '@/lib/prisma'
 import { createSession } from '@/lib/auth'
 import bcrypt from 'bcryptjs'
 import * as bcrypt from 'bcryptjs'
+export const runtime = 'nodejs'
+
+import { NextRequest, NextResponse } from 'next/server'
 
 export async function POST(request: NextRequest) {
   try {
